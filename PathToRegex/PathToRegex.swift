@@ -229,26 +229,18 @@ private func tokensToPatternGroups (_ tokens:[Token], options:Options) -> Patter
         }
     }
     
-    // In non-strict mode we allow a slash at the end of match. If the path to
-    // match already ends with a slash, we remove it for consistency. The slash
-    // is valid at the end of a path match, not in the middle. This is important
-    // in non-ending mode, where "/test/" shouldn't match "/test//route".
-    if !strict {
-        route = {
-            if endsWithSlash {
-                return route.substring(to: route.index(route.endIndex, offsetBy: -2))
-            } else {
-                return route
-            }
-        }() + "(?:\\/(?=$))?"
-    }
-    
     if end {
+        if !strict {
+            route += "(?:" + "/" + ")?"
+        }
         route += "$"
-    } else if strict && endsWithSlash {
-        // In non-ending mode, we need the capturing groups to match as much as
-        // possible by using a positive lookahead to the end or next path segment.
-        route += "(?=\\/|$)"
+    } else {
+        if !strict {
+            route += "(?:" + "/" + "(?=" + "$" + "))?"
+        }
+        if !endsWithSlash {
+            route += "(?=" + "/" + "|" + "$" + ")"
+        }
     }
     
     return PatternGroups(pattern: "^" + route, groups: groups)
